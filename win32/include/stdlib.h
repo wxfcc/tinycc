@@ -136,7 +136,7 @@ extern "C" {
 
 #ifndef _CRT_ERRNO_DEFINED
 #define _CRT_ERRNO_DEFINED
-  _CRTIMP extern int *__cdecl _errno(void);
+  _CRTIMP int *__cdecl _errno(void);
 #define errno (*_errno())
   errno_t __cdecl _set_errno(int _Value);
   errno_t __cdecl _get_errno(int *_Value);
@@ -544,8 +544,13 @@ extern "C" {
 
   __CRT_INLINE long long __cdecl llabs(long long _j) { return (_j >= 0 ? _j : -_j); }
 
+ #ifdef __TINYC__ /* gr */
+  #define strtoll _strtoi64
+  #define strtoull _strtoui64
+ #else
   long long  __cdecl strtoll(const char* __restrict__, char** __restrict, int);
   unsigned long long  __cdecl strtoull(const char* __restrict__, char** __restrict__, int);
+ #endif
 
   /* these are stubs for MS _i64 versions */
   long long  __cdecl atoll (const char *);

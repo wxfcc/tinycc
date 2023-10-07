@@ -39,8 +39,6 @@ int code_reloc (int reloc_type)
         case R_C60_PLT32:
             return 1;
     }
-
-    tcc_error ("Unknown relocation type: %d", reloc_type);
     return -1;
 }
 
@@ -64,14 +62,12 @@ int gotplt_entry_type (int reloc_type)
         case R_C60_GOT32:
             return ALWAYS_GOTPLT_ENTRY;
     }
-
-    tcc_error ("Unknown relocation type: %d", reloc_type);
     return -1;
 }
 
 ST_FUNC unsigned create_plt_entry(TCCState *s1, unsigned got_offset, struct sym_attr *attr)
 {
-    tcc_error("C67 got not implemented");
+    tcc_error_noabort("C67 got not implemented");
     return 0;
 }
 
@@ -94,8 +90,6 @@ ST_FUNC void relocate_plt(TCCState *s1)
         }
    }
 }
-
-void relocate_init(Section *sr) {}
 
 void relocate(TCCState *s1, ElfW_Rel *rel, int type, unsigned char *ptr, addr_t addr, addr_t val)
 {

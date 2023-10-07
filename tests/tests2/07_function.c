@@ -17,7 +17,7 @@ void qfunc()
 
 void zfunc()
 {
-   ((void (*)(void))0) ();
+	((void (*)(void))0) ();
 }
 
 int main()

@@ -137,6 +137,11 @@ void __aeabi_ ## name(double_unsigned_struct val)                            \
     int exp, high_shift, sign;                                               \
     double_unsigned_struct ret;                                              \
                                                                              \
+    if ((val.high & ~0x80000000) == 0 && val.low == 0) {                     \
+        ret.low = ret.high = 0;                                              \
+        goto _ret_;                                                          \
+    }                                                                        \
+                                                                             \
     /* compute sign */                                                       \
     sign = val.high >> 31;                                                   \
                                                                              \
@@ -190,6 +195,7 @@ void __aeabi_ ## name(double_unsigned_struct val)                            \
             ret.low++;                                                       \
     }                                                                        \
                                                                              \
+_ret_:                                                                       \
     double_unsigned_struct_return(ret);                                      \
 }
 
@@ -313,7 +319,7 @@ void __aeabi_ ## name(unsigned long long v)                             \
             }                                                           \
         } else {                                                        \
             ret.high = ret.low = 0;                                     \
-            double_unsigned_struct_return(ret);                         \
+            goto _ret_;                                                 \
         }                                                               \
     }                                                                   \
                                                                         \
@@ -323,6 +329,7 @@ void __aeabi_ ## name(unsigned long long v)                             \
     /* fill sign bit */                                                 \
     ret.high |= sign << 31;                                             \
                                                                         \
+_ret_:                                                                  \
     double_unsigned_struct_return(ret);                                 \
 }
 
@@ -498,4 +505,40 @@ __AEABI_XDIVMOD(idivmod, int, uidivmod, idiv_t, uidiv_t, INT)
 void __aeabi_uidivmod(unsigned num, unsigned den)
 {
     uidiv_t_return(aeabi_uidivmod(num, den));
+}
+
+/* Some targets do not have all eabi calls (OpenBSD) */
+typedef __SIZE_TYPE__ size_t;
+extern void *memcpy(void *dest, const void *src, size_t n);
+extern void *memmove(void *dest, const void *src, size_t n);
+extern void *memset(void *s, int c, size_t n);
+
+void *
+__aeabi_memcpy (void *dest, const void *src, size_t n)
+{
+    return memcpy (dest, src, n);
+}
+
+void *
+__aeabi_memmove (void *dest, const void *src, size_t n)
+{
+    return memmove (dest, src, n);
+}
+
+void *
+__aeabi_memmove4 (void *dest, const void *src, size_t n)
+{
+    return memmove (dest, src, n);
+}
+
+void *
+__aeabi_memmove8 (void *dest, const void *src, size_t n)
+{
+    return memmove (dest, src, n);
+}
+
+void *
+__aeabi_memset (void *s, size_t n, int c)
+{
+    return memset (s, c, n);
 }
