@@ -82,6 +82,7 @@ ST_FUNC int tcc_tool_ar(TCCState *s1, int argc, char **argv)
     ArHdr arhdro = arhdr_init;
 
     FILE *fi, *fh = NULL, *fo = NULL;
+    const char *created_file = NULL; // must delete on error
     ElfW(Ehdr) *ehdr;
     ElfW(Shdr) *shdr;
     ElfW(Sym) *sym;
@@ -187,6 +188,7 @@ finish:
         fprintf(stderr, "tcc: ar: can't create file %s\n", argv[i_lib]);
         goto the_end;
     }
+    created_file = argv[i_lib];
 
     sprintf(tfile, "%s.tmp", argv[i_lib]);
     if ((fo = fopen(tfile, "wb+")) == NULL)
@@ -334,6 +336,8 @@ the_end:
         tcc_free(afpos);
     if (fh)
         fclose(fh);
+    if (created_file && ret != 0)
+        remove(created_file);
     if (fo)
         fclose(fo), remove(tfile);
     return ret;
@@ -624,6 +628,22 @@ ST_FUNC int gen_makedeps(TCCState *s1, const char *target, const char *filename)
     next:;
     }
     fprintf(depout, "\n");
+    if (s1->gen_phony_deps) {
+        /* Skip first file, which is the c file.
+         * This will still print any additional c files specified
+         * on command-line, but e.g. clang produces broken dependency
+         * files in this case as well, printing only dependencies for last
+         * file in command line. So ignore this case. */
+        for (i = 1; i<s1->nb_target_deps; ++i) {
+            for (k = 0; k < i; ++k)
+                if (0 == strcmp(s1->target_deps[i], s1->target_deps[k]))
+                    goto next2;
+            escaped_target = escape_target_dep(s1->target_deps[i]);
+            fprintf(depout, "%s:\n", escaped_target);
+            tcc_free(escaped_target);
+        next2:;
+        }
+    }
     fclose(depout);
     return 0;
 }
