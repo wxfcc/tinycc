@@ -323,6 +323,8 @@ static inline void asm_expr_sum(TCCState *s1, ExprValue *pe)
 		ElfSym *esym1, *esym2;
 		esym1 = elfsym(pe->sym);
 		esym2 = elfsym(e2.sym);
+		if (!esym2)
+		    goto cannot_relocate;
 		if (esym1 && esym1->st_shndx == esym2->st_shndx
 		    && esym1->st_shndx != SHN_UNDEF) {
 		    /* we also accept defined symbols in the same section */
@@ -331,7 +333,7 @@ static inline void asm_expr_sum(TCCState *s1, ExprValue *pe)
 		} else if (esym2->st_shndx == cur_text_section->sh_num) {
 		    /* When subtracting a defined symbol in current section
 		       this actually makes the value PC-relative.  */
-		    pe->v -= esym2->st_value - ind - 4;
+		    pe->v += 0 - esym2->st_value;
 		    pe->pcrel = 1;
 		    e2.sym = NULL;
 		} else {
@@ -662,8 +664,7 @@ static void asm_parse_directive(TCCState *s1, int global)
                     tcc_error("we at end of file, .endr not found");
                 tok_str_add_tok(init_str);
             }
-            tok_str_add(init_str, -1);
-            tok_str_add(init_str, 0);
+            tok_str_add(init_str, TOK_EOF);
             begin_macro(init_str, 1);
             while (repeat-- > 0) {
                 tcc_assemble_internal(s1, (parse_flags & PARSE_FLAG_PREPROCESS),
@@ -834,6 +835,10 @@ static void asm_parse_directive(TCCState *s1, int global)
 
             if (!strcmp(newtype, "function") || !strcmp(newtype, "STT_FUNC")) {
                 sym->type.t = (sym->type.t & ~VT_BTYPE) | VT_FUNC;
+                if (sym->c) {
+                    ElfSym *esym = elfsym(sym);
+                    esym->st_info = ELFW(ST_INFO)(ELFW(ST_BIND)(esym->st_info), STT_FUNC);
+                }
             } else
                 tcc_warning_c(warn_unsupported)("change type of '%s' from 0x%x to '%s' ignored",
                     get_tok_str(sym->v, NULL), sym->type.t, newtype);
